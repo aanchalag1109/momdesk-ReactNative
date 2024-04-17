@@ -39,11 +39,12 @@ export const Styles = StyleSheet.create({
         backgroundColor: colorItem.orange,
         marginHorizontal: 20,
         color: colorItem.white,
-        borderRadius: 7,
+        borderRadius: 10,
+        elevation: 10,
         justifyContent: "center",
         alignItems: "center",
         height: 50,
-        marginVertical:20
+        marginVertical: 20
     },
     mainHeadingContainer: {
         justifyContent: "center",

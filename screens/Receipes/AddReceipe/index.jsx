@@ -1,15 +1,17 @@
 import React, { useState } from 'react';
-import { View, TextInput, Button, Text, KeyboardAvoidingView, ScrollView, StyleSheet } from 'react-native';
+import { View, TextInput, Button, Text, KeyboardAvoidingView, ScrollView, StyleSheet, Image } from 'react-native';
 import RNPickerSelect from 'react-native-picker-select';
 import { Styles } from './styles';
+import { launchImageLibrary, launchCamera } from 'react-native-image-picker';
 import FontAwesome from 'react-native-vector-icons/FontAwesome';
-import { PostData, axiosPostData } from '../../../utils/ApiInstances';
+import { PostData, axiosPostData, baseUrl } from '../../../utils/ApiInstances';
 import CommonInput from '../../../components/CommonInput';
 import { colorItem } from '../../../assets/color';
 import CommonBtn from '../../../components/commonBtn';
 import Toaster from '../../../components/Toaster';
 import Header from '../../../components/Header';
 import { ROUTECONST } from '../../../utils/Routes/RouteConstants';
+import Storage from '../../../utils/Storage';
 
 const AddRecipe = (props) => {
     const [title, setTitle] = useState('');
@@ -20,20 +22,98 @@ const AddRecipe = (props) => {
     const [category, setCategory] = useState('Breakfast');
     const [instructions, setInstructions] = useState('');
     const [ingredients, setIngredients] = useState(['']);
+    const [imageSource, setImageSource] = useState(null);
+    const [imageDeatils, setImageDetails] = useState('');
 
-    const submitRecipe = async() => {
-        const res = await PostData('create-recipe', {
-            title,
-            description,
-            duration,
-            instructions,
-            ingredients,
-            category,
-            image: imageUrl
+    const openImagePicker = () => {
+        const options = {
+            mediaType: 'photo',
+            includeBase64: false,
+            maxHeight: 2000,
+            maxWidth: 2000,
+        };
+
+        launchImageLibrary(options, (response) => {
+            if (response.didCancel) {
+                console.log('User cancelled image picker');
+            } else if (response.error) {
+                console.log('Image picker error: ', response.error);
+            } else {
+                console.log(JSON.stringify(response));
+                let imageUri = response.uri || response.assets?.[0]?.uri;
+                let imageName = response.fileName || response.assets?.[0]?.fileName;
+                let imageType = response.type || response.assets?.[0]?.type;
+                setImageSource(imageUri);
+                setImageDetails({
+                    uri: imageUri,
+                    name: imageName,
+                    type: imageType,
+                });
+            }
         });
-        if(res.status){
-            props.navigation.navigate(ROUTECONST.RECIPELIST)
-        }
+    };
+    const handleCameraLaunch = () => {
+        const options = {
+            mediaType: 'photo',
+            includeBase64: false,
+            maxHeight: 2000,
+            maxWidth: 2000,
+        };
+
+        launchCamera(options, response => {
+            if (response.didCancel) {
+                console.log('User cancelled camera');
+            } else if (response.error) {
+                console.log('Camera Error: ', response.error);
+            } else {
+                let imageUri = response.uri || response.assets?.[0]?.uri;
+                let imageName = response.fileName || response.assets?.[0]?.fileName;
+                let imageType = response.type || response.assets?.[0]?.type;
+                setImageSource(imageUri);
+                setImageDetails({
+                    uri: imageUri,
+                    name: imageName,
+                    type: imageType,
+                });
+            }
+        });
+    }
+    const submitRecipe = async () => {
+        let token = await Storage.getToken();
+        console.log("token is", token);
+        const formData = new FormData();
+        formData.append('image', imageDeatils);
+        formData.append('title', title);
+        formData.append('description', description);
+        formData.append('duration', duration);
+        formData.append('instructions', instructions);
+        formData.append('ingredients', ingredients);
+        formData.append('category', category);
+        await fetch(baseUrl + '/create-recipe', {
+            method: 'post',
+            headers: {
+              'Content-Type': 'multipart/form-data',
+              Authorization: 'Bearer ' + token,
+            },
+            body: formData,
+          })
+            .then(response => {
+              const rrr = response.json();
+              return rrr;
+            })
+            .then(res => {
+                if (res.status) {
+                    props.navigation.navigate(ROUTECONST.RECIPELIST)
+                }else{
+                    settoaster({ msg: res.message, color: colorItem.red });
+                }
+              
+            })
+            .catch(err => {
+              console.log("mm", err);
+            });
+        
+        
     };
     const handleIngredientChange = (index, value) => {
         const newIngredients = [...ingredients];
@@ -65,7 +145,7 @@ const AddRecipe = (props) => {
     const handleDurationInput = (value) => {
         setDuration(value);
     }
-    
+
     return (
         <>
             <Header title='Add New Recipe' leftIconFunction={() => props.navigation.goBack()} />
@@ -74,6 +154,19 @@ const AddRecipe = (props) => {
                     <View style={Styles.container}>
                         <View style={Styles.mainHeadingContainer}>
                             <Text style={Styles.headingMsg}>Add New Recipe</Text>
+                        </View>
+
+                        <View style={Styles.textInputContainer}>
+                            <Text style={Styles.inputMsg}>Upload Recipe Image</Text>
+                            <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', flexDirection: 'row' }}>
+                                <CommonBtn customBtnStyle={{ paddingHorizontal: 10, width: 120 }} handleBtn={openImagePicker} btnText=" From Device" />
+                                <CommonBtn customBtnStyle={{ paddingHorizontal: 10, width: 120 }} handleBtn={handleCameraLaunch} btnText="Open Camera" />
+                            </View>
+                            <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', flexDirection: 'row' }}>
+                                {imageSource && <Image source={{uri: imageSource}} style={{ width: 100, height: 100 }} />}
+                            </View>
+                            
+                                
                         </View>
                         <View style={Styles.textInputContainer}>
                             <Text style={Styles.inputMsg}>Enter Recipe Title</Text>
@@ -88,10 +181,6 @@ const AddRecipe = (props) => {
                             <CommonInput keyType='numeric' value={duration} handleInput={handleDurationInput} name='password' />
                         </View>
                         <View style={Styles.textInputContainer}>
-                            <Text style={Styles.inputMsg}>Enter Image URL</Text>
-                            <CommonInput value={imageUrl} handleInput={handleImageInput} name='imageUrl' />
-                        </View>
-                        <View style={Styles.textInputContainer}>
                             <Text style={Styles.inputMsg}>Add Instructions</Text>
                             <CommonInput value={instructions} handleInput={handleInstructionInput} name='instructions' />
                         </View>
@@ -99,23 +188,23 @@ const AddRecipe = (props) => {
                             <Text style={Styles.inputMsg}>Add Ingredients</Text>
                         </View>
                         <View style={Styles.ingredientsInputContainer}>
-                        {ingredients.map((ingredient, index) => (
-                            <View key={index} style={Styles.ingredientsContainer}>
-                                <CommonInput
-                                    key={index}
-                                    custumInputStyle={ index > 0 ? Styles.ingredientsInput: ''}
-                                    value={ingredient}
-                                    handleInput={(text) => handleIngredientChange(index, text)}
-                                />
-                                {index > 0 && (
-                                    <Button
-                                        title="Remove"
-                                        style={Styles.ingredientsButton}
-                                        onPress={() => removeIngredient(index)}
-                                        color={colorItem.orange}
+                            {ingredients.map((ingredient, index) => (
+                                <View key={index} style={Styles.ingredientsContainer}>
+                                    <CommonInput
+                                        key={index}
+                                        custumInputStyle={index > 0 ? Styles.ingredientsInput : ''}
+                                        value={ingredient}
+                                        handleInput={(text) => handleIngredientChange(index, text)}
                                     />
-                                )}
-                            </View>
+                                    {index > 0 && (
+                                        <Button
+                                            title="Remove"
+                                            style={Styles.ingredientsButton}
+                                            onPress={() => removeIngredient(index)}
+                                            color={colorItem.orange}
+                                        />
+                                    )}
+                                </View>
                             ))}
                         </View>
                         <CommonBtn handleBtn={addIngredient} btnText="Add More" />
