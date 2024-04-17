@@ -17,8 +17,9 @@ export const styles = StyleSheet.create({
         alignItems: 'center',
         backgroundColor: colorItem.orange
     },
+    headerIconStyle:{color:colorItem.white, fontSize:FontSizes.extraLarge, marginleft:10},
     appLogo: { height: 50, width: 150 },
-    rightIconsContainer: { flexDirection: "row", justifyContent: "space-between", width:"25%", alignItems:"center" },
+    rightIconsContainer: { flex:1, flexDirection: 'row', gap:10, justifyContent: 'flex-end', alignItems: 'center'},
     leftIconContainer: { width: '15%', },
     centerContent: { width: "60%", alignItems: "center", justifyContent: "center" },
     centerContentText: { fontSize: FontSizes.slightLarge, color: colorItem.white, fontFamily: Fonts.Poppins_Medium},

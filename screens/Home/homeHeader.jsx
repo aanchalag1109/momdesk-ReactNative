@@ -1,6 +1,6 @@
 import React, { Image, Pressable, Text, View } from 'react-native'
 import { styles } from './styles'
-import LottieView from 'lottie-react-native';
+import Ionicons from 'react-native-vector-icons/Ionicons'
 import { images } from '../../assets/images';
 import { animation } from "../../assets/animation";
 
@@ -17,11 +17,11 @@ const HomeHeader = ({ left, rightsLeftItem, rightsRightItem, handleRight = () =>
                 <Text style={styles.centerContentText}> Home </Text>
             </View>
             <View style={styles.rightIconsContainer}>
-                <Pressable onPress={handleRight} style={{ width: "30%", height: 35, marginBottom: 4 }}>
-                    <LottieView source={animation.ADD_ITEM} autoPlay loop />
+                <Pressable onPress={handleRight} style={{ width: "30%" }}>
+                    <Ionicons name="add-circle" style={styles.headerIconStyle} />
                 </Pressable>
-                <Pressable style={{height:120, width:"30%"}} onPress={handleRightMost}>
-                    <LottieView source={animation.LOGOUT} autoPlay loop />
+                <Pressable onPress={handleRightMost} style={{ width: "30%" }}>
+                    <Ionicons name="exit-outline" style={styles.headerIconStyle} />
                 </Pressable>
             </View>
         </View>
